@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кости</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="back" href="index.html">← Назад</a>
+  <h1>Кости</h1>
+  <div class="balance">Фишки: <span id="balance"></span></div>
+  <div class="big" id="view">🎲</div>
+  <div class="message" id="message">Число от 1 до 100</div>
+  <div>Шанс: <b id="chv"></b></div>
+  <input type="range" id="chance" min="5" max="95" value="50">
+  <input type="number" id="bet" value="10" min="10" step="10">
+  <div class="row">
+    <button class="greenb" id="bu" onclick="play('under')"></button>
+    <button class="redb" id="bo" onclick="play('over')"></button>
+  </div>
+  <button class="reset" id="reset">Получить 1000 фишек</button>
+  <div class="note">Виртуальные фишки.</div>
+
+  <script src="common.js"></script>
+  <script>
+    let busy = false;
+    const ch = $('chance');
+
+    function upd() {
+      const c = +ch.value;
+      $('chv').textContent = c + '% · ×' + (97 / c).toFixed(2);
+      $('bu').textContent = 'Число ≤ ' + c;
+      $('bo').textContent = 'Число > ' + (100 - c);
+    }
+    ch.oninput = upd; upd();
+
+    function play(mode) {
+      if (busy) return;
+      const bet = getBet();
+      if (!bet) return;
+      const c = +ch.value;
+      busy = true;
+      balance -= bet; render();
+      say('Бросаем...');
+      const t = setInterval(() => {
+        $('view').textContent = 1 + Math.floor(Math.random() * 100);
+      }, 60);
+      setTimeout(() => {
+        clearInterval(t);
+        const roll = 1 + Math.floor(Math.random() * 100);
+        $('view').textContent = roll;
+        const win = mode === 'under' ? roll <= c : roll > 100 - c;
+        if (win) {
+          const w = Math.floor(bet * 97 / c);
+          balance += w;
+          say('🎉 Выигрыш ' + w, 'win');
+        } else {
+          say('Не повезло', 'lose');
+        }
+        render(); busy = false;
+      }, 800);
+    }
+  </script>
+</body>
+</html>
