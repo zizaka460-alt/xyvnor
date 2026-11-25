@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Орёл и решка</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="back" href="index.html">← Назад</a>
+  <h1>Орёл и решка</h1>
+  <div class="balance">Фишки: <span id="balance"></span></div>
+  <div class="big" id="view">🪙</div>
+  <div class="message" id="message">Выберите сторону</div>
+  <input type="number" id="bet" value="10" min="10" step="10">
+  <div class="row">
+    <button class="gold" onclick="play('Орёл')">🦅 Орёл</button>
+    <button class="gold" onclick="play('Решка')">🔘 Решка</button>
+  </div>
+  <button class="reset" id="reset">Получить 1000 фишек</button>
+  <div class="note">Виртуальные фишки. Выигрыш ×1.95</div>
+
+  <script src="common.js"></script>
+  <script>
+    let busy = false;
+    function play(side) {
+      if (busy) return;
+      const bet = getBet();
+      if (!bet) return;
+      busy = true;
+      balance -= bet; render();
+      say('Монета в воздухе...');
+      $('view').textContent = '🌀';
+      setTimeout(() => {
+        const res = Math.random() < 0.5 ? 'Орёл' : 'Решка';
+        $('view').textContent = res === 'Орёл' ? '🦅' : '🔘';
+        if (res === side) {
+          const w = Math.floor(bet * 1.95);
+          balance += w;
+          say('🎉 ' + res + '! Выигрыш ' + w, 'win');
+        } else {
+          say(res + '. Не повезло', 'lose');
+        }
+        render(); busy = false;
+      }, 800);
+    }
+  </script>
+</body>
+</html>
