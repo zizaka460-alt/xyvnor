@@ -3,403 +3,127 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Казино — Ракета</title>
+  <title>Ракета</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      padding: 20px;
-      background: radial-gradient(circle at top, #0a1a3a, #05070f 70%);
-      font-family: Arial, sans-serif;
-      color: #fff;
-    }
-
-    .back {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      color: gold;
-      text-decoration: none;
-    }
-
-    h1 {
-      color: gold;
-      letter-spacing: 6px;
-      text-transform: uppercase;
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-    }
-
-    .balance {
-      font-size: 22px;
-      background: #000;
-      border: 2px solid gold;
-      border-radius: 12px;
-      padding: 8px 24px;
-    }
-
-    .balance span { color: gold; font-weight: bold; }
-
+    .screen { position: relative; width: 100%; max-width: 360px; background: #08010f; border: 2px solid #7b3fd1; border-radius: 16px; overflow: hidden; }
+    canvas { display: block; width: 100%; }
+    #mult { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 50px; font-weight: bold; text-shadow: 0 0 15px #000; pointer-events: none; }
+    #mult.crashed { color: #ff8ad8; }
+    #mult.won { color: #e3b8ff; }
     .history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; min-height: 26px; }
-
-    .history span {
-      font-size: 13px;
-      padding: 3px 8px;
-      border-radius: 10px;
-      background: #222;
-    }
-
-    .history .low { color: #ff6b6b; }
-    .history .mid { color: #4cc3ff; }
-    .history .high { color: #4cff6a; }
-
-    .screen {
-      position: relative;
-      width: 100%;
-      max-width: 360px;
-      background: #000;
-      border: 2px solid #335;
-      border-radius: 16px;
-      overflow: hidden;
-    }
-
-    canvas { display: block; width: 100%; height: 240px; }
-
-    #mult {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 54px;
-      font-weight: bold;
-      text-shadow: 0 0 15px rgba(0, 0, 0, 0.9);
-      pointer-events: none;
-    }
-
-    #mult.crashed { color: #ff4d4d; }
-    #mult.won { color: #4cff6a; }
-
-    .controls {
-      display: flex;
-      gap: 12px;
-      width: 100%;
-      max-width: 360px;
-    }
-
-    .controls label { flex: 1; font-size: 13px; color: #bbb; }
-
-    .controls input {
-      width: 100%;
-      margin-top: 4px;
-      padding: 10px;
-      font-size: 18px;
-      border: 2px solid gold;
-      border-radius: 10px;
-      background: #000;
-      color: #fff;
-    }
-
-    .quick { display: flex; gap: 8px; }
-
-    .quick button {
-      padding: 6px 14px;
-      border: 1px solid gold;
-      border-radius: 8px;
-      background: #000;
-      color: gold;
-      cursor: pointer;
-    }
-
-    #action {
-      width: 100%;
-      max-width: 360px;
-      padding: 16px;
-      font-size: 24px;
-      font-weight: bold;
-      text-transform: uppercase;
-      border: none;
-      border-radius: 14px;
-      color: #fff;
-      cursor: pointer;
-      background: linear-gradient(#2fd44f, #0d7a24);
-      box-shadow: 0 5px 0 #064d15;
-    }
-
-    #action.cash { background: linear-gradient(#ffb02e, #c26a00); box-shadow: 0 5px 0 #7a4200; }
-    #action:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    #reset {
-      display: none;
-      padding: 12px 30px;
-      font-size: 18px;
-      border: none;
-      border-radius: 12px;
-      background: #a80000;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    .message { min-height: 28px; font-size: 20px; font-weight: bold; text-align: center; }
-    .win { color: #4cff6a; }
-    .lose { color: #ff6b6b; }
-
-    .note { font-size: 12px; color: #777; text-align: center; }
+    .history span { font-size: 13px; padding: 3px 8px; background: #2a1050; border-radius: 10px; }
+    #go.cash { background: linear-gradient(#e08cff, #8a1fd6); }
   </style>
 </head>
 <body>
   <a class="back" href="index.html">← Назад</a>
-
   <h1>Ракета</h1>
-
-  <div class="balance">Фишки: <span id="balance">1000</span></div>
-
+  <div class="balance">Фишки: <span id="balance"></span></div>
   <div class="history" id="history"></div>
-
   <div class="screen">
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas" width="360" height="240"></canvas>
     <div id="mult">1.00x</div>
   </div>
-
   <div class="message" id="message">Сделайте ставку и взлетайте!</div>
-
-  <div class="controls">
-    <label>Ставка
-      <input type="number" id="bet" value="10" min="10" step="10">
-    </label>
-    <label>Авто-вывод (x)
-      <input type="number" id="auto" placeholder="нет" min="1.01" step="0.1">
-    </label>
+  <div class="row">
+    <input type="number" id="bet" value="10" min="10" step="10">
+    <input type="number" id="auto" placeholder="Авто-вывод (x)" min="1.01" step="0.1">
   </div>
+  <button class="gold" id="go" style="width:220px">Старт</button>
+  <button class="reset" id="reset">Получить 1000 фишек</button>
+  <div class="note">Виртуальные фишки. Успейте забрать до взрыва!</div>
 
-  <div class="quick">
-    <button data-q="min">Мин</button>
-    <button data-q="half">½</button>
-    <button data-q="double">×2</button>
-    <button data-q="max">Макс</button>
-  </div>
-
-  <button id="action">Старт</button>
-  <button id="reset">Получить 1000 фишек</button>
-
-  <div class="note">Игра на виртуальные фишки, не на реальные деньги.</div>
-
+  <script src="common.js"></script>
   <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const multEl = document.getElementById('mult');
-    const balanceEl = document.getElementById('balance');
-    const messageEl = document.getElementById('message');
-    const historyEl = document.getElementById('history');
-    const betInput = document.getElementById('bet');
-    const autoInput = document.getElementById('auto');
-    const actionBtn = document.getElementById('action');
-    const resetBtn = document.getElementById('reset');
-
-    let balance = parseInt(localStorage.getItem('casinoBalance')) || 1000;
-    let history = JSON.parse(localStorage.getItem('rocketHistory') || '[]');
-
-    let flying = false;
-    let cashed = false;
-    let bet = 0;
-    let crashPoint = 1;
-    let startTime = 0;
-    let mult = 1;
-    let rafId;
-
+    const ctx = $('canvas').getContext('2d');
     const W = 360, H = 240;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.scale(dpr, dpr);
+    let flying = false, cashed = false, bet = 0, crashAt = 1, t0 = 0, mult = 1;
+    let hist = JSON.parse(localStorage.getItem('rocketHistory') || '[]');
 
-    function saveBalance() {
-      localStorage.setItem('casinoBalance', balance);
-      balanceEl.textContent = balance;
-      if (!flying && balance < 10) {
-        actionBtn.style.display = 'none';
-        resetBtn.style.display = 'inline-block';
-        showMessage('Фишки закончились!', 'lose');
-      } else {
-        actionBtn.style.display = 'block';
-        resetBtn.style.display = 'none';
-      }
+    function showHist() {
+      $('history').innerHTML = hist.map(v =>
+        '<span class="' + (v < 2 ? 'lose' : v < 10 ? '' : 'win') + '">' + v.toFixed(2) + 'x</span>'
+      ).join('');
     }
 
-    function showMessage(text, cls) {
-      messageEl.textContent = text;
-      messageEl.className = 'message ' + (cls || '');
-    }
-
-    function renderHistory() {
-      historyEl.innerHTML = '';
-      history.forEach(v => {
-        const s = document.createElement('span');
-        s.textContent = v.toFixed(2) + 'x';
-        s.className = v < 2 ? 'low' : v < 10 ? 'mid' : 'high';
-        historyEl.appendChild(s);
-      });
-    }
-
-    // Точка взрыва: небольшое преимущество казино (~3%)
-    function generateCrashPoint() {
-      const r = Math.random();
-      const p = 0.97 / (1 - r);
+    function genCrash() {
+      const p = 0.97 / (1 - Math.random());
       return Math.max(1, Math.min(100, Math.floor(p * 100) / 100));
     }
 
-    function draw(t, m, state) {
+    function draw(t, m, crashed) {
       ctx.clearRect(0, 0, W, H);
-
-      // сетка
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(178,102,255,0.12)';
       for (let i = 1; i < 6; i++) {
-        ctx.beginPath(); ctx.moveTo(0, (H / 6) * i); ctx.lineTo(W, (H / 6) * i); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo((W / 6) * i, 0); ctx.lineTo((W / 6) * i, H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, H / 6 * i); ctx.lineTo(W, H / 6 * i); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(W / 6 * i, 0); ctx.lineTo(W / 6 * i, H); ctx.stroke();
       }
-
-      const maxT = Math.max(6, t);
-      const maxM = Math.max(2, m);
-      const px = tt => 20 + (tt / maxT) * (W - 60);
-      const py = mm => H - 20 - ((mm - 1) / (maxM - 1)) * (H - 60);
-
-      // кривая
-      ctx.beginPath();
-      ctx.moveTo(px(0), py(1));
-      const steps = 60;
-      for (let i = 1; i <= steps; i++) {
-        const tt = (t / steps) * i;
+      const mt = Math.max(6, t), mm = Math.max(2, m);
+      const px = x => 20 + x / mt * (W - 60);
+      const py = y => H - 20 - (y - 1) / (mm - 1) * (H - 60);
+      ctx.beginPath(); ctx.moveTo(px(0), py(1));
+      for (let i = 1; i <= 60; i++) {
+        const tt = t / 60 * i;
         ctx.lineTo(px(tt), py(Math.exp(0.15 * tt)));
       }
-      ctx.strokeStyle = state === 'crashed' ? '#ff4d4d' : '#ff8a00';
-      ctx.lineWidth = 4;
-      ctx.stroke();
-
-      // ракета / взрыв
-      const x = px(t), y = py(m);
-      ctx.font = '34px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(state === 'crashed' ? '💥' : '🚀', x, y);
+      ctx.strokeStyle = crashed ? '#ff8ad8' : '#b266ff';
+      ctx.lineWidth = 4; ctx.stroke();
+      ctx.font = '34px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(crashed ? '💥' : '🚀', px(t), py(m));
     }
 
     function loop(now) {
-      const t = (now - startTime) / 1000;
+      const t = (now - t0) / 1000;
       mult = Math.exp(0.15 * t);
-
-      if (mult >= crashPoint) {
-        return crash(t);
-      }
-
-      if (!cashed) {
-        const auto = parseFloat(autoInput.value);
-        if (auto >= 1.01 && mult >= auto) {
-          cashOut(auto);
-        }
-      }
-
-      multEl.textContent = mult.toFixed(2) + 'x';
-      draw(t, mult, 'flying');
-      rafId = requestAnimationFrame(loop);
+      if (mult >= crashAt) return crash(t);
+      const a = parseFloat($('auto').value);
+      if (!cashed && a >= 1.01 && mult >= a) cash(a);
+      $('mult').textContent = mult.toFixed(2) + 'x';
+      draw(t, mult, false);
+      requestAnimationFrame(loop);
     }
 
     function crash(t) {
-      mult = crashPoint;
-      multEl.textContent = crashPoint.toFixed(2) + 'x';
-      draw(t, crashPoint, 'crashed');
-
-      history.unshift(crashPoint);
-      history = history.slice(0, 10);
-      localStorage.setItem('rocketHistory', JSON.stringify(history));
-      renderHistory();
-
-      if (!cashed) {
-        multEl.className = 'crashed';
-        showMessage('💥 Ракета взорвалась на ' + crashPoint.toFixed(2) + 'x. Ставка проиграна', 'lose');
-      } else {
-        multEl.className = 'crashed';
-      }
-
+      $('mult').textContent = crashAt.toFixed(2) + 'x';
+      $('mult').className = 'crashed';
+      draw(t, crashAt, true);
+      hist.unshift(crashAt); hist = hist.slice(0, 10);
+      localStorage.setItem('rocketHistory', JSON.stringify(hist));
+      showHist();
+      if (!cashed) say('💥 Взрыв на ' + crashAt.toFixed(2) + 'x. Ставка проиграна', 'lose');
       flying = false;
-      actionBtn.textContent = 'Старт';
-      actionBtn.className = '';
-      actionBtn.disabled = false;
-      saveBalance();
+      $('go').textContent = 'Старт'; $('go').className = 'gold'; $('go').disabled = false;
+      render();
     }
 
-    function cashOut(atMult) {
+    function cash(at) {
       if (!flying || cashed) return;
       cashed = true;
-      const m = atMult || mult;
-      const win = Math.floor(bet * m);
-      balance += win;
-      saveBalance();
-      multEl.className = 'won';
-      showMessage('🎉 Вы забрали ' + win + ' фишек (' + m.toFixed(2) + 'x)', 'win');
-      actionBtn.textContent = 'Забрано!';
-      actionBtn.className = '';
-      actionBtn.disabled = true;
+      const m = at || mult;
+      const w = Math.floor(bet * m);
+      balance += w; render();
+      $('mult').className = 'won';
+      say('🎉 Вы забрали ' + w + ' (' + m.toFixed(2) + 'x)', 'win');
+      $('go').textContent = 'Забрано!'; $('go').disabled = true;
     }
 
-    function start() {
-      bet = Math.floor(parseInt(betInput.value));
-      if (!bet || bet < 10) {
-        showMessage('Минимальная ставка 10', 'lose');
-        return;
-      }
-      if (bet > balance) {
-        showMessage('Не хватает фишек', 'lose');
-        return;
-      }
+    $('go').onclick = () => {
+      if (flying) return cash();
+      const b = getBet();
+      if (!b) return;
+      bet = b; balance -= bet; render();
+      flying = true; cashed = false;
+      crashAt = genCrash();
+      $('mult').className = '';
+      say('Летим...');
+      $('go').textContent = 'Забрать'; $('go').className = 'gold cash';
+      t0 = performance.now();
+      requestAnimationFrame(loop);
+    };
 
-      balance -= bet;
-      saveBalance();
-
-      flying = true;
-      cashed = false;
-      crashPoint = generateCrashPoint();
-      multEl.className = '';
-      showMessage('Летим...', '');
-      actionBtn.textContent = 'Забрать';
-      actionBtn.className = 'cash';
-
-      startTime = performance.now();
-      rafId = requestAnimationFrame(loop);
-    }
-
-    actionBtn.addEventListener('click', () => {
-      if (!flying) start();
-      else cashOut();
-    });
-
-    document.querySelectorAll('.quick button').forEach(b => {
-      b.addEventListener('click', () => {
-        if (flying) return;
-        const cur = parseInt(betInput.value) || 10;
-        const q = b.dataset.q;
-        let v = cur;
-        if (q === 'min') v = 10;
-        if (q === 'half') v = Math.max(10, Math.floor(cur / 2));
-        if (q === 'double') v = cur * 2;
-        if (q === 'max') v = balance;
-        betInput.value = Math.max(10, Math.min(v, Math.max(balance, 10)));
-      });
-    });
-
-    resetBtn.addEventListener('click', () => {
-      balance = 1000;
-      showMessage('Сделайте ставку и взлетайте!', '');
-      saveBalance();
-    });
-
-    draw(0, 1, 'idle');
-    renderHistory();
-    saveBalance();
+    draw(0, 1, false);
+    showHist();
   </script>
 </body>
 </html>
