@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Рулетка</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="back" href="index.html">← Назад</a>
+  <h1>Рулетка</h1>
+  <div class="balance">Фишки: <span id="balance"></span></div>
+  <div class="big" id="view">🎡</div>
+  <div class="message" id="message">Выберите цвет</div>
+  <input type="number" id="bet" value="10" min="10" step="10">
+  <div class="row">
+    <button class="redb" onclick="play('red')">Красное ×2</button>
+    <button class="blackb" onclick="play('black')">Чёрное ×2</button>
+    <button class="greenb" onclick="play('green')">Зеро ×36</button>
+  </div>
+  <button class="reset" id="reset">Получить 1000 фишек</button>
+  <div class="note">Виртуальные фишки. Числа 0-36, как в европейской рулетке.</div>
+
+  <script src="common.js"></script>
+  <script>
+    const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    let busy = false;
+
+    function colorOf(n) { return n === 0 ? 'green' : reds.includes(n) ? 'red' : 'black'; }
+
+    function paint(n) {
+      const c = colorOf(n);
+      $('view').textContent = n;
+      $('view').style.color = c === 'red' ? '#ff4d4d' : c === 'green' ? '#4cff6a' : '#fff';
+    }
+
+    function play(color) {
+      if (busy) return;
+      const bet = getBet();
+      if (!bet) return;
+      busy = true;
+      balance -= bet; render();
+      say('Крутим...');
+      const t = setInterval(() => paint(Math.floor(Math.random() * 37)), 70);
+      setTimeout(() => {
+        clearInterval(t);
+        const n = Math.floor(Math.random() * 37);
+        paint(n);
+        if (colorOf(n) === color) {
+          const w = bet * (color === 'green' ? 36 : 2);
+          balance += w;
+          say('🎉 Выпало ' + n + '! Выигрыш ' + w, 'win');
+        } else {
+          say('Выпало ' + n + '. Не повезло', 'lose');
+        }
+        render(); busy = false;
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
