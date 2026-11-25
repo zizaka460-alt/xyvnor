@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дурак</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .zone { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; min-height: 84px; width: 100%; max-width: 360px; }
+    #table { min-height: 112px; border: 2px dashed #7b3fd1; border-radius: 14px; padding: 6px; background: rgba(178,102,255,.08); align-content: center; }
+    .card {
+      width: 52px; height: 78px; background: #fff; color: #111; border-radius: 8px;
+      border: 2px solid #b266ff; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; line-height: 1.1;
+      cursor: pointer; user-select: none;
+    }
+    .card b { font-size: 20px; }
+    .card i { font-style: normal; font-size: 26px; }
+    .card.red { color: #d0006f; }
+    .card.tr { background: #f6e9ff; box-shadow: 0 0 10px #e08cff; }
+    .back {
+      width: 34px; height: 50px; margin-left: -14px; border: 2px solid #e3c4ff; border-radius: 6px;
+      background: repeating-linear-gradient(45deg, #6a1fc2, #6a1fc2 5px, #3a1170 5px, #3a1170 10px);
+    }
+    .back:first-child { margin-left: 0; }
+    .pair { position: relative; width: 72px; height: 100px; }
+    .pair .card:nth-child(2) { position: absolute; left: 18px; top: 18px; }
+    #bot { gap: 0; min-height: 54px; }
+    #pass, #take { display: none; }
+  </style>
+</head>
+<body>
+  <a class="back-link back" href="index.html" style="display:none"></a>
+  <a class="back" href="index.html" style="width:auto;height:auto;margin:0;border:0;background:none;position:absolute">← Назад</a>
+  <h1>Дурак</h1>
+  <div class="note" id="deckinfo"></div>
+  <div class="note" id="botn"></div>
+  <div class="zone" id="bot"></div>
+  <div class="zone" id="table"></div>
+  <div class="message" id="message"></div>
+  <div class="row">
+    <button class="gold" id="pass">Бито</button>
+    <button class="redb" id="take">Беру</button>
+  </div>
+  <div class="zone" id="me"></div>
+  <button class="gold" id="new">Новая игра</button>
+  <div class="note">Подкидной дурак против компьютера. Козыри подсвечены.</div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const say = (t, c) => { $('message').textContent = t; $('message').className = 'message ' + (c || ''); };
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    const SU = ['♠', '♥', '♦', '♣'];
+    const RK = ['6', '7', '8', '9', '10', 'В', 'Д', 'К', 'Т'];
+
+    let deck, trump, hand, table, turn, limit, busy, over;
+    const opp = p => p === 'me' ? 'bot' : 'me';
+    const und = () => table.find(p => !p.d);
+    const key = c => (c.s === trump ? 100 : 0) + c.r;
+    const beats = (a, d) => (d.s === a.s && d.r > a.r) || (d.s === trump && a.s !== trump);
+    const canAdd = c => table.length === 0 ||
+      (table.length < limit && hand[opp(turn)].length > 0 &&
+       table.some(p => p.a.r === c.r || (p.d && p.d.r === c.r)));
+
+    function newGame() {
+      deck = [];
+      for (let s = 0; s < 4; s++) for (let r = 0; r < 9; r++) deck.push({ s, r });
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      trump = deck[0].s;
+      hand = { me: deck.splice(-6), bot: deck.splice(-6) };
+      const low = h => Math.min(99, ...h.filter(c => c.s === trump).map(c => c.r));
+      turn = low(hand.bot) < low(hand.me) ? 'bot' : 'me';
+      over = false;
+      startRound();
+    }
+
+    function startRound() {
+      table = [];
+      limit = Math.min(6, hand[opp(turn)].length);
+      if (turn === 'me') {
+        busy = false;
+        say('Ваш ход: выберите карту для атаки');
+        render();
+      } else {
+        say('Ходит бот...');
+        botAttack();
+      }
+    }
+
+    function cardEl(c, click) {
+      const d = document.createElement('div');
+      d.className = 'card' + (c.s === 1 || c.s === 2 ? ' red' : '') + (c.s === trump ? ' tr' : '');
+      d.innerHTML = '<b>' + RK[c.r] + '</b><i>' + SU[c.s] + '</i>';
+      if (click) d.onclick = click;
+      return d;
+    }
+
+    function render() {
+      $('deckinfo').textContent = 'Колода: ' + deck.length + '  ·  Козырь: ' + SU[trump];
+      $('botn').textContent = 'Карт у бота: ' + hand.bot.length;
+      $('bot').innerHTML = '';
+      hand.bot.forEach(() => {
+        const d = document.createElement('div');
+        d.className = 'back';
+        $('bot').appendChild(d);
+      });
+      $('table').innerHTML = '';
+      table.forEach(p => {
+        const w = document.createElement('div');
+        w.className = 'pair';
+        w.appendChild(cardEl(p.a));
+        if (p.d) w.appendChild(cardEl(p.d));
+        $('table').appendChild(w);
+      });
+      $('me').innerHTML = '';
+      hand.me.slice().sort((x, y) => key(x) - key(y))
+        .forEach(c => $('me').appendChild(cardEl(c, () => clickCard(c))));
+      $('pass').style.display = (!over && turn === 'me' && !busy && table.length > 0 && !und()) ? 'inline-block' : 'none';
+      $('take').style.display = (!over && turn === 'bot' && !busy && und()) ? 'inline-block' : 'none';
+    }
+
+    async function clickCard(c) {
+      if (busy || over) return;
+      if (turn === 'me') {
+        if (!canAdd(c)) return say('Так нельзя: нужна карта того же достоинства, что уже на столе', 'lose');
+        busy = true;
+        hand.me = hand.me.filter(x => x !== c);
+        table.push({ a: c, d: null });
+        render();
+        await botDefend();
+      } else {
+        const p = und();
+        if (!p) return;
+        if (!beats(p.a, c)) return say('Эта карта не бьёт', 'lose');
+        hand.me = hand.me.filter(x => x !== c);
+        p.d = c;
+        render();
+        await botAttack();
+      }
+    }
+
+    function bestDef(a) {
+      const c = hand.bot.filter(x => beats(a, x)).sort((x, y) => key(x) - key(y))[0];
+      if (!c) return null;
+      if (c.s === trump && a.s !== trump && c.r >= 5 && a.r < 4 && deck.length > 2) return null;
+      return c;
+    }
+
+    function pickAtk() {
+      return hand.bot
+        .filter(canAdd)
+        .filter(c => table.length === 0 || c.s !== trump || deck.length === 0)
+        .sort((a, b) => key(a) - key(b))[0] || null;
+    }
+
+    async function botDefend() {
+      say('Бот думает...');
+      await wait(700);
+      const p = und(), c = bestDef(p.a);
+      if (!c) {
+        say('Бот берёт карты');
+        await wait(900);
+        takeCards('bot');
+        return;
+      }
+      hand.bot = hand.bot.filter(x => x !== c);
+      p.d = c;
+      render();
+      await wait(400);
+      if (!hand.me.some(x => canAdd(x))) {
+        say('Бито!');
+        await wait(900);
+        endRound(true);
+      } else {
+        busy = false;
+        say('Подкиньте ещё карту или нажмите «Бито»');
+        render();
+      }
+    }
+
+    async function botAttack() {
+      busy = true;
+      render();
+      await wait(800);
+      const c = pickAtk();
+      if (!c) {
+        say('Бито!');
+        await wait(800);
+        endRound(true);
+        return;
+      }
+      hand.bot = hand.bot.filter(x => x !== c);
+      table.push({ a: c, d: null });
+      busy = false;
+      say('Бот ходит. Побейте карту или нажмите «Беру»');
+      render();
+    }
+
+    async function iTake() {
+      if (busy || over || turn !== 'bot' || !und()) return;
+      busy = true;
+      render();
+      say('Вы берёте. Бот подкидывает...');
+      await wait(700);
+      let c;
+      while ((c = pickAtk())) {
+        hand.bot = hand.bot.filter(x => x !== c);
+        table.push({ a: c, d: null });
+        render();
+        await wait(500);
+      }
+      takeCards('me');
+    }
+
+    function takeCards(who) {
+      table.forEach(p => { hand[who].push(p.a); if (p.d) hand[who].push(p.d); });
+      endRound(false);
+    }
+
+    function endRound(defended) {
+      table = [];
+      [turn, opp(turn)].forEach(w => {
+        while (hand[w].length < 6 && deck.length) hand[w].push(deck.pop());
+      });
+      if (defended) turn = opp(turn);
+      if (deck.length === 0) {
+        const a = !hand.me.length, b = !hand.bot.length;
+        if (a || b) {
+          over = true; busy = false;
+          render();
+          say(a && b ? 'Ничья!' : a ? '🎉 Вы победили! Дураком остался бот' : '🤡 Вы остались в дураках',
+              a && !b ? 'win' : 'lose');
+          return;
+        }
+      }
+      startRound();
+    }
+
+    $('pass').onclick = () => { if (busy || over) return; busy = true; render(); endRound(true); };
+    $('take').onclick = iTake;
+    $('new').onclick = () => location.reload();
+    newGame();
+  </script>
+</body>
+</html>
