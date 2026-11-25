@@ -8,32 +8,51 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+      gap: 30px;
       background: #111;
+      font-family: Arial, sans-serif;
     }
 
-    a {
-      font-family: Arial, sans-serif;
-      font-size: 64px;
-      font-weight: bold;
+    h1 {
+      font-size: 56px;
       color: gold;
-      text-decoration: none;
       text-transform: uppercase;
       letter-spacing: 8px;
       text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-      transition: transform 0.2s, text-shadow 0.2s;
     }
 
-    a:hover, a:active {
-      transform: scale(1.1);
-      text-shadow: 0 0 40px rgba(255, 215, 0, 1);
+    .games { display: flex; flex-direction: column; gap: 16px; width: 80%; max-width: 320px; }
+
+    .games a {
+      display: block;
+      text-align: center;
+      padding: 18px;
+      font-size: 24px;
+      font-weight: bold;
+      text-decoration: none;
+      color: gold;
+      border: 2px solid gold;
+      border-radius: 14px;
+      background: #000;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .games a:hover, .games a:active {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
     }
   </style>
 </head>
 <body>
-  <a href="casino.html">Казино</a>
+  <h1>Казино</h1>
+  <div class="games">
+    <a href="casino.html">🎰 Слоты</a>
+    <a href="rocket.html">🚀 Ракета</a>
+  </div>
 </body>
 </html>
