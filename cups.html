@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Стаканчики</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .stage { position: relative; width: 290px; height: 160px; margin: 10px 0; }
+    .cup { position: absolute; top: 60px; width: 90px; height: 90px; cursor: pointer; transition: left 0.3s; }
+    .lid {
+      position: absolute; left: 0; bottom: 0; width: 90px; height: 90px;
+      background: linear-gradient(#c58bff, #5a1ba8);
+      clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%);
+      transition: transform 0.3s;
+    }
+    .ball {
+      position: absolute; left: 31px; bottom: 4px; width: 28px; height: 28px;
+      border-radius: 50%; background: radial-gradient(circle at 30% 30%, #fff, #ff8ad8);
+      box-shadow: 0 0 12px #ff8ad8; display: none;
+    }
+    .cup.has .ball { display: block; }
+    .cup.up .lid { transform: translateY(-60px); }
+  </style>
+</head>
+<body>
+  <a class="back" href="index.html">← Назад</a>
+  <h1>Стаканчики</h1>
+  <div class="balance">Фишки: <span id="balance"></span></div>
+  <div class="message" id="message">Сделайте ставку и нажмите Старт</div>
+  <div class="stage" id="stage"></div>
+  <input type="number" id="bet" value="10" min="10" step="10">
+  <button class="gold" id="start">Старт</button>
+  <button class="reset" id="reset">Получить 1000 фишек</button>
+  <div class="note">Виртуальные фишки. Угадали стаканчик: выигрыш ×2.9</div>
+
+  <script src="common.js"></script>
+  <script>
+    const cups = [];
+    let pos = [0, 1, 2], ballId = 0, state = 'idle', bet = 0;
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+
+    for (let i = 0; i < 3; i++) {
+      const c = document.createElement('div');
+      c.className = 'cup';
+      c.innerHTML = '<div class="ball"></div><div class="lid"></div>';
+      c.onclick = () => pick(i);
+      $('stage').appendChild(c);
+      cups.push(c);
+    }
+
+    function place() {
+      cups.forEach((c, i) => c.style.left = pos[i] * 100 + 'px');
+    }
+    place();
+
+    async function start() {
+      if (state !== 'idle') return;
+      const b = getBet();
+      if (!b) return;
+      bet = b;
+      balance -= bet; render();
+      state = 'busy';
+      $('start').disabled = true;
+      $('bet').disabled = true;
+
+      cups.forEach(c => c.classList.remove('up', 'has'));
+      ballId = Math.floor(Math.random() * 3);
+      cups[ballId].classList.add('has');
+      say('Запоминайте шарик!');
+      await wait(300);
+      cups[ballId].classList.add('up');
+      await wait(1000);
+      cups[ballId].classList.remove('up');
+      await wait(500);
+
+      say('Перемешиваем...');
+      for (let k = 0; k < 10; k++) {
+        const a = Math.floor(Math.random() * 3);
+        let d = Math.floor(Math.random() * 3);
+        while (d === a) d = Math.floor(Math.random() * 3);
+        [pos[a], pos[d]] = [pos[d], pos[a]];
+        place();
+        await wait(380);
+      }
+
+      say('Где шарик? Выберите стаканчик');
+      state = 'pick';
+    }
+
+    function pick(i) {
+      if (state !== 'pick') return;
+      state = 'idle';
+      cups.forEach(c => c.classList.add('up'));
+      if (i === ballId) {
+        const w = Math.floor(bet * 2.9);
+        balance += w;
+        say('🎉 Угадали! Выигрыш ' + w, 'win');
+      } else {
+        say('Не угадали, шарик был в другом стаканчике', 'lose');
+      }
+      render();
+      $('start').disabled = false;
+      $('bet').disabled = false;
+    }
+
+    $('start').onclick = start;
+  </script>
+</body>
+</html>
