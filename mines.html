@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мины</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; max-width: 340px; }
+    .cell { aspect-ratio: 1; font-size: 28px; padding: 0; background: #2d1450; border: 2px solid #7b3fd1; }
+    .cell:disabled { opacity: 1; color: #fff; }
+    .cell.safe { background: #6a2fc2; box-shadow: 0 0 12px #b266ff; }
+    .cell.bomb { background: #3d0a4f; border-color: #ff8ad8; }
+    .cell.dim { opacity: 0.5; }
+  </style>
+</head>
+<body>
+  <a class="back" href="index.html">← Назад</a>
+  <h1>Мины</h1>
+  <div class="balance">Фишки: <span id="balance"></span></div>
+  <div class="message" id="message">Выберите ставку и количество мин</div>
+  <div class="grid" id="grid"></div>
+  <div id="info">Множитель: ×1.00</div>
+  <div>Мин: <b id="mcv">3</b></div>
+  <input type="range" id="mc" min="1" max="24" value="3">
+  <input type="number" id="bet" value="10" min="10" step="10">
+  <div class="row">
+    <button class="gold" id="start">Старт</button>
+    <button class="greenb" id="cash" disabled>Забрать</button>
+  </div>
+  <button class="reset" id="reset">Получить 1000 фишек</button>
+  <div class="note">Виртуальные фишки. Чем больше мин, тем выше множитель.</div>
+
+  <script src="common.js"></script>
+  <script>
+    const N = 25;
+    let mines = new Set(), opened = 0, playing = false, bet = 0, m = 3;
+    const cells = [];
+
+    for (let i = 0; i < N; i++) {
+      const b = document.createElement('button');
+      b.className = 'cell';
+      b.onclick = () => pick(i);
+      $('grid').appendChild(b);
+      cells.push(b);
+    }
+
+    const mult = k => {
+      let r = 0.97;
+      for (let i = 0; i < k; i++) r *= (N - i) / (N - m - i);
+      return r;
+    };
+
+    function info() {
+      let t = 'Множитель: ×' + mult(opened).toFixed(2);
+      if (opened < N - m) t += ' · Следующий: ×' + mult(opened + 1).toFixed(2);
+      $('info').textContent = t;
+      if (playing && opened > 0) $('cash').textContent = 'Забрать ' + Math.floor(bet * mult(opened));
+    }
+
+    $('mc').oninput = () => {
+      $('mcv').textContent = $('mc').value;
+      if (!playing) { m = +$('mc').value; info(); }
+    };
+
+    function reveal() {
+      cells.forEach((c, k) => {
+        if (c.textContent) return;
+        c.disabled = true;
+        c.textContent = mines.has(k) ? '💣' : '💎';
+        c.classList.add(mines.has(k) ? 'bomb' : 'dim');
+      });
+    }
+
+    function end() {
+      playing = false;
+      reveal();
+      $('start').disabled = false;
+      $('cash').disabled = true;
+      $('cash').textContent = 'Забрать';
+      $('mc').disabled = false;
+      $('bet').disabled = false;
+    }
+
+    function pick(i) {
+      if (!playing || cells[i].disabled) return;
+      cells[i].disabled = true;
+      if (mines.has(i)) {
+        cells[i].textContent = '💥';
+        cells[i].classList.add('bomb');
+        end();
+        say('💥 Мина! Ставка проиграна', 'lose');
+      } else {
+        opened++;
+        cells[i].textContent = '💎';
+        cells[i].classList.add('safe');
+        $('cash').disabled = false;
+        info();
+        if (opened === N - m) cash();
+      }
+    }
+
+    function cash() {
+      if (!playing || opened < 1) return;
+      const w = Math.floor(bet * mult(opened));
+      balance += w;
+      render();
+      const x = mult(opened).toFixed(2);
+      end();
+      say('🎉 Вы забрали ' + w + ' фишек (×' + x + ')', 'win');
+    }
+
+    $('start').onclick = () => {
+      if (playing) return;
+      const b = getBet();
+      if (!b) return;
+      bet = b;
+      m = +$('mc').value;
+      balance -= bet;
+      render();
+      mines = new Set();
+      while (mines.size < m) mines.add(Math.floor(Math.random() * N));
+      opened = 0;
+      playing = true;
+      cells.forEach(c => { c.textContent = ''; c.className = 'cell'; c.disabled = false; });
+      $('start').disabled = true;
+      $('cash').disabled = true;
+      $('mc').disabled = true;
+      $('bet').disabled = true;
+      say('Открывайте клетки');
+      info();
+    };
+
+    $('cash').onclick = cash;
+    info();
+  </script>
+</body>
+</html>
