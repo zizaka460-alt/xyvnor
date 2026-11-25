@@ -5,31 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Казино</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      height: 100vh;               /* высота на весь экран */
+      height: 100vh;
       display: flex;
-      justify-content: center;     /* по горизонтали */
-      align-items: center;         /* по вертикали */
+      justify-content: center;
+      align-items: center;
       background: #111;
     }
 
-    h1 {
+    a {
       font-family: Arial, sans-serif;
-      font-size: 80px;
+      font-size: 64px;
+      font-weight: bold;
       color: gold;
+      text-decoration: none;
       text-transform: uppercase;
       letter-spacing: 8px;
       text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      transition: transform 0.2s, text-shadow 0.2s;
+    }
+
+    a:hover, a:active {
+      transform: scale(1.1);
+      text-shadow: 0 0 40px rgba(255, 215, 0, 1);
     }
   </style>
 </head>
 <body>
-  <h1>Казино</h1>
+  <a href="casino.html">Казино</a>
 </body>
 </html>
